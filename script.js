@@ -1,16 +1,19 @@
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
 const supabaseUrl = "https://zqutjbazmvggbuvkegie.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxdXRqYmF6bXZnZ2J1dmtlZ2llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDg3MTgsImV4cCI6MjA1OTI4NDcxOH0.Nl2r3k-q8ZqGoPZFukwqECb9uyXCBKMrho-YgcpOLME";
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 let user_id = null;
 let gomyaks = 0;
 
 async function getUser() {
-    const { data: user, error } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
     if (error) {
         console.error("Ошибка получения пользователя:", error.message);
-    } else if (user) {
-        user_id = user.id;
+    } else if (data && data.user) {
+        user_id = data.user.id;
         loadUserData();
     }
 }
@@ -39,7 +42,7 @@ function updateCounter() {
 async function saveData() {
     if (!user_id) return;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from("gomyak_data")
         .upsert([{ user_id, gomyaks }]);
 
