@@ -1,73 +1,57 @@
-const SUPABASE_URL = "https://zqutjbazmvggbuvkegie.supabase.co"; 
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxdXRqYmF6bXZnZ2J1dmtlZ2llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDg3MTgsImV4cCI6MjA1OTI4NDcxOH0.Nl2r3k-q8ZqGoPZFukwqECb9uyXCBKMrho-YgcpOLME"; 
+const supabaseUrl = "https://zqutjbazmvggbuvkegie.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxdXRqYmF6bXZnZ2J1dmtlZ2llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDg3MTgsImV4cCI6MjA1OTI4NDcxOH0.Nl2r3k-q8ZqGoPZFukwqECb9uyXCBKMrho-YgcpOLME";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-const USER_ID = localStorage.getItem("user_id") || crypto.randomUUID();
-localStorage.setItem("user_id", USER_ID);
+let user_id = null;
+let gomyaks = 0;
 
-async function fetchData() {
-    try {
-        console.log("Запрос данных с сервера для:", USER_ID);
-        
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/gomyak_data?user_id=eq.${USER_ID}`, {
-            headers: {
-                "apikey": SUPABASE_KEY,
-                "Authorization": `Bearer ${SUPABASE_KEY}`,
-                "Content-Type": "application/json"
-            }
-        });
-
-        const data = await response.json();
-        console.log("Ответ сервера (fetchData):", data);
-        return data.length ? data[0].gomyaks : 0;
-    } catch (error) {
-        console.error("Ошибка при получении данных:", error);
-        return 0;
+async function getUser() {
+    const { data: user, error } = await supabase.auth.getUser();
+    if (error) {
+        console.error("Ошибка получения пользователя:", error.message);
+    } else if (user) {
+        user_id = user.id;
+        loadUserData();
     }
 }
 
-async function saveData(count) {
-    try {
-        console.log("Отправка данных:", { user_id: USER_ID, gomyaks: count });
+async function loadUserData() {
+    if (!user_id) return;
 
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/gomyak_data`, {
-            method: "POST",
-            headers: {
-                "apikey": SUPABASE_KEY,
-                "Authorization": `Bearer ${SUPABASE_KEY}`,
-                "Content-Type": "application/json",
-                "Prefer": "resolution=merge-duplicates"
-            },
-            body: JSON.stringify({ user_id: USER_ID, gomyaks: count })
-        });
+    const { data, error } = await supabase
+        .from("gomyak_data")
+        .select("gomyaks")
+        .eq("user_id", user_id)
+        .single();
 
-        const result = await response.json();
-        console.log("Ответ сервера (saveData):", result);
-    } catch (error) {
-        console.error("Ошибка при сохранении данных:", error);
+    if (error) {
+        console.error("Ошибка загрузки данных:", error.message);
+    } else if (data) {
+        gomyaks = data.gomyaks;
+        updateCounter();
     }
 }
 
-async function initGame() {
-    if (!isMobile()) {
-        document.body.innerHTML = "<h2>Игра доступна только на мобильных устройствах. Откройте её на телефоне!</h2>";
-        return;
+function updateCounter() {
+    document.getElementById("counter").innerText = gomyaks;
+}
+
+async function saveData() {
+    if (!user_id) return;
+
+    const { data, error } = await supabase
+        .from("gomyak_data")
+        .upsert([{ user_id, gomyaks }]);
+
+    if (error) {
+        console.error("Ошибка сохранения данных:", error.message);
     }
-
-    let count = await fetchData();
-    const counterElement = document.getElementById("counter");
-    const tapButton = document.getElementById("tap-button");
-
-    counterElement.textContent = count;
-
-    tapButton.addEventListener("click", async () => {
-        count++;
-        counterElement.textContent = count;
-        await saveData(count);
-    });
 }
 
-function isMobile() {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
+document.getElementById("tapButton").addEventListener("click", async () => {
+    gomyaks++;
+    updateCounter();
+    await saveData();
+});
 
-initGame();
+getUser();
