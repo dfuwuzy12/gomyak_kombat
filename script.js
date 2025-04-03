@@ -1,31 +1,50 @@
-const SUPABASE_URL = "https://zqutjbazmvggbuvkegie.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxdXRqYmF6bXZnZ2J1dmtlZ2llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDg3MTgsImV4cCI6MjA1OTI4NDcxOH0.Nl2r3k-q8ZqGoPZFukwqECb9uyXCBKMrho-YgcpOLME";
+const SUPABASE_URL = "ТВОЙ_URL"; 
+const SUPABASE_KEY = "ТВОЙ_KEY"; 
+
 const USER_ID = localStorage.getItem("user_id") || crypto.randomUUID();
 localStorage.setItem("user_id", USER_ID);
 
 async function fetchData() {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/gomyak_data?user_id=eq.${USER_ID}`, {
-        headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`,
-            "Content-Type": "application/json"
-        }
-    });
+    try {
+        console.log("Запрос данных с сервера для:", USER_ID);
+        
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/gomyak_data?user_id=eq.${USER_ID}`, {
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json"
+            }
+        });
 
-    const data = await response.json();
-    return data.length ? data[0].gomyaks : 0;
+        const data = await response.json();
+        console.log("Ответ сервера (fetchData):", data);
+        return data.length ? data[0].gomyaks : 0;
+    } catch (error) {
+        console.error("Ошибка при получении данных:", error);
+        return 0;
+    }
 }
 
 async function saveData(count) {
-    await fetch(`${SUPABASE_URL}/rest/v1/gomyak_data`, {
-        method: "upsert",
-        headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ user_id: USER_ID, gomyaks: count })
-    });
+    try {
+        console.log("Отправка данных:", { user_id: USER_ID, gomyaks: count });
+
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/gomyak_data`, {
+            method: "POST",
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates"
+            },
+            body: JSON.stringify({ user_id: USER_ID, gomyaks: count })
+        });
+
+        const result = await response.json();
+        console.log("Ответ сервера (saveData):", result);
+    } catch (error) {
+        console.error("Ошибка при сохранении данных:", error);
+    }
 }
 
 async function initGame() {
