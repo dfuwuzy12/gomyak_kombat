@@ -1,5 +1,5 @@
-const SUPABASE_URL = "ТВОЙ_URL"; 
-const SUPABASE_KEY = "ТВОЙ_KEY"; 
+const SUPABASE_URL = "https://zqutjbazmvggbuvkegie.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxdXRqYmF6bXZnZ2J1dmtlZ2llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDg3MTgsImV4cCI6MjA1OTI4NDcxOH0.Nl2r3k-q8ZqGoPZFukwqECb9uyXCBKMrho-YgcpOLME"; 
 
 const USER_ID = localStorage.getItem("user_id") || crypto.randomUUID();
 localStorage.setItem("user_id", USER_ID);
